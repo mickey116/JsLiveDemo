@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="../css/reset.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+    integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <style>
+
+    .container {
+      margin: 150px auto;
+      width: 400px;
+      background-color: #ffcf00;
+      padding: 10px;
+    }
+
+    .title{
+      font-weight: 900;
+      color: black;
+      text-align: center;
+      font-size: 25px;
+      height: 40px;
+      margin-bottom:10px ;
+    }
+
+
+    .completed {
+      text-decoration: line-through;
+      color: #ccc;
+    } 
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="title">
+      <i class="far fa-list-alt"></i>
+      <span>TO DO LIST</span>
+
+    </div>
+    <div class="header">
+      <div class="add">
+        <div class="input-group mb-3">
+          <input type="text" class="form-control border-warning" placeholder="新增待辦事項" aria-describedby="button-addon2"
+            id="newTodo">
+          <div class="input-group-append">
+            <button class="btn btn-warning" type="button" id="addTodos"><i class="fas fa-plus text-white"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card text-center wait">
+      <ul class="list-group list-group-flush text-left" id="todolist">
+    
+      </ul>
+      <div class="card-footer d-flex justify-content-between">
+        <span>有<span id="taskCount">0</span>筆任務</span>
+        <a href="#" id="clearAllTasks">
+          <i class="fas fa-sync-alt text-warning"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    // 獲取對象
+    var newTodo = document.getElementById('newTodo')
+    var addTodos = document.getElementById('addTodos')
+    var todolist = document.getElementById('todolist')
+    var taskCount = document.getElementById('taskCount')
+    var clearAllTasks = document.getElementById('clearAllTasks')
+
+    // console.log(addTodos)
+
+    //建立資料 -> 若localstorege有資料則讀取 沒有則為空陣列
+    let todos = JSON.parse(localStorage.getItem('todo')) || [];
+
+    //初始頁面 
+    renderPage(todos)
+
+    // 綁定事件
+
+    // 新增代辦事項
+    newTodo.addEventListener('keydown', addTodo)
+    addTodos.addEventListener('click', addTodo)
+    function addTodo(e) {
+      // enter及
+      if (e.type === 'click' || e.keyCode == 13) {
+        let newTodoText = newTodo.value.trim() //去除多於空白
+        let timeStamp = Math.floor(Date.now()); //作為ＩＤ使用
+        if (newTodoText !== '') {
+          todos.push(
+            {
+              id: timeStamp,
+              title: newTodoText,
+              completed: false
+            }
+          )
+          // 添加至localstorage
+          localStorage.setItem('todo', JSON.stringify(todos))
+          // 重新渲染
+          renderPage(todos);
+          // 添加完成後變為空字串
+          newTodo.value = ''
+        }
+      }
+    }
+
+    // 編輯項目
+    todolist.addEventListener('click', editItem)
+    function editItem(e) {
+      var action = e.target.parentNode.dataset.action;
+      var id = e.target.parentNode.dataset.id;
+      // 判斷行為
+      if (action == 'remove') {
+        removeTodo(id)
+      } else if (action === 'complete') {
+        completeTodo(id)
+
+      }
+
+    }
+    // 刪除項目
+    function removeTodo(id) {
+      // 保存位置
+      var newIndex = 0;
+      todos.forEach((item, index) => {
+        if (id == item.id) {
+          newIndex = index;
+        }
+      })
+      // 刪除項目（目前位置,刪除幾個）
+      todos.splice(newIndex, 1);
+      // 添加至localstorage
+      localStorage.setItem('todo', JSON.stringify(todos))
+      renderPage(todos)
+
+    }
+
+    // 完成項目
+    function completeTodo(id) {
+      todos.forEach((item) => {
+        if (id == item.id) {
+          //判斷item.completed，改變Boolean值，透過三元運算子，增加或移除class
+          if (item.completed) {
+            item.completed = false;
+          } else {
+            item.completed = true;
+          }
+        }
+      })
+      // 添加至localstorage
+      localStorage.setItem('todo', JSON.stringify(todos))
+      renderPage(todos)
+    }
+
+    // 清除所有任務
+    clearAllTasks.addEventListener('click', clearAllTask)
+    function clearAllTask(e) {
+      e.preventDefault();
+      // 清除所有事情，讓陣列為空
+      todos = [];
+      // 清除localStorage
+      localStorage.clear();
+      // 重新渲染
+      renderPage(todos)
+
+    }
+
+    // 渲染頁面
+    function renderPage(data) {
+      var str = '';
+      data.forEach((item) => {
+        str += `
+        <li class="list-group-item">
+        <div class="d-flex">
+          <div class="form-check" data-action="complete" data-id="${item.id}">
+            <input type="checkbox" class="form-check-input" ${item.completed ? 'checked' : ''} data-action="complete" data-id="${item.id}">
+          <label class="form-check-label ${item.completed ? 'completed' : ''}" data-action="complete" data-id="${item.id}"> ${item.title}</label>
+          </div>
+          <button type="button" class="close ml-auto remove" aria-label="Close" data-action="remove" data-id="${item.id}">
+          <span aria-hidden="true">&times;</span>
+          </button>
+          
+        </div>
+        </li>
+        `
+
+      })
+
+      // 添加至ul
+      todolist.innerHTML = str;
+      //計算任務數
+      taskCount.textContent = data.length;
+    }
+
+  </script>
+
+</body>
+
+</html>

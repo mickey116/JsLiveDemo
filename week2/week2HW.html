@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <style>
+    #app{
+      width: 900px;
+      margin: 100px auto;
+    }
+    /* 背景圖方式 */
+    .bg{
+      height: 250px;
+      background-position: center center;
+      background-size: cover;
+    }
+    /* img方式 */
+    img{
+      max-width: 100%;
+      max-height: 160px;
+    }
+    
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="row">
+        <!-- <img src="${item.imageUrl[0]}" class="card-img-top"> -->
+      </div>
+    </div>
+    
+  
+  </div>
+  
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+var obj ={
+  data:{
+    uuid : 'b2a0a13b-3f39-4e27-abe0-72d7b7e3eda8',
+    apiPath : 'https://course-ec-api.hexschool.io/',
+    products:[]
+  },
+  getProducts(){
+    const vm = this;
+    const api = `${vm.data.apiPath}api/${vm.data.uuid}/ec/products`
+    // 遠端獲取資料
+    axios.get(api)
+    .then((res)=>{
+      vm.data.products = res.data.data;
+      vm.render();
+    })
+    .catch((err)=>{
+      console.log(err);  
+    })
+  },
+  render(){
+    const vm = this;
+    // 獲取ＤＯＭ元素
+    const row = document.querySelector('.row');
+    const products = vm.data.products;
+    let str = '';
+    console.log(products);
+    products.forEach((item,i)=>{
+      str += 
+      `
+        <div class="col-md-4 mb-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="bg" style='background-image: url(${item.imageUrl[0]});'></div>
+            <div class="card-body">
+              <h5 class="card-title">${item.title}</h5>
+              <p class="card-text">${item.content}
+              </p>
+              <div class="d-flex justify-content-between">
+                <del>原價 ${item.origin_price}</del>
+                <span class="text-danger">售價 ${item.price}</span>
+              </div>
+              
+            </div>
+            <div class="card-footer text-right bg-white">
+              <a href="#" class="btn btn-warning">加到購物車</a>
+            </div>
+          </div>
+        </div>
+      `
+
+      
+    });
+    // 將資料寫入ＤＯＭ元素中
+    row.innerHTML = str;
+  }
+}
+
+obj.getProducts();
+
+
+
+
+</script>  
+</body>
+</html>
