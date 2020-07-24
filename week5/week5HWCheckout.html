@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+    integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/vue-loading-overlay@3/dist/vue-loading.css" rel="stylesheet">
+  <style>
+    .btn {
+      position: relative;
+    }
+
+    .btn-cart .badge {
+      position: absolute;
+      top: -1px;
+      right: -1px;
+
+    }
+
+    .jumbotron-bg {
+      background-image: url(https://images.unsplash.com/photo-1550944862-82305e47d898?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=750&q=80);
+      background-size: cover;
+      background-position: center center;
+      min-height: 400px;
+    }
+
+    .box-shadow{
+    box-shadow: 0 3px 5px rgba(0,0,0,.16);
+    transition: box-shadow .3s;
+  }
+
+  .box-shadow:hover{
+    box-shadow: 0 4px 10px rgba(0,0,0,.24);
+  }
+  </style>
+</head>
+
+<body>
+
+  <div id="app">
+    <!-- loading 套件 start -->
+    <loading :active.sync="isLoading"></loading>
+    <!-- loading 套件 end -->
+
+    <nav class="navbar navbar-light bg-light">
+      <a class="navbar-brand" href="/購物網頁簡介.html">
+        <i class="fas fa-paw text-info"></i>
+        可愛公仔王國
+      </a>
+    </nav>
+
+    <!-- main -->
+    <div class="container main-content py-5">
+      <!-- alert -->
+      <div class="form-row">
+        <div class="col-12 col-md">
+          <div class="alert alert-success alert-rounded text-center" role="alert">
+            1.輸入訂單資料
+          </div>
+        </div>
+        <!-- md以上顯示 -->
+        <div class="col-12 col-md d-md-block d-none">
+          <div class="alert alert-light alert-rounded text-center" role="alert">
+            2.金流付款
+          </div>
+        </div>
+        <div class="col-12 col-md d-md-block d-none">
+          <div class="alert alert-light alert-rounded text-center" role="alert">
+            3.完成
+          </div>
+        </div>
+      </div>
+    
+      <!-- 折疊選單 -->
+      <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+          <div class="accordion" id="accordionExample">
+            <div class="card border-bottom">
+              <div class="card-header" id="headingOne">
+                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne"
+                  aria-expanded="true" aria-controls="collapseOne">
+                  顯示購物車細節
+                </button>
+              </div>
+            </div>
+            <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionExample">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th width="30"></th>
+                    <th width="100"></th>
+                    <th>商品名稱</th>
+                    <th width="100">數量</th>
+                    <th width="80">小計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in cart" :key="item.product.id">
+                    <td class="align-middle text-center">
+                      <a href="#" class="text-muted"  @click.prevent="removeCartItem(item.product.id)">
+                        <i class="far fa-trash-alt " aria-hidden="true"></i>
+                      </a>
+                    </td>
+                    <td>
+                      <img
+                        :src="item.product.imageUrl"
+                        alt="" width="100%">
+                    </td>
+                    <td class="align-middle">{{item.product.title}}</td>
+                    <td class="align-middle">{{item.quantity}} {{item.product.unit}}</td>
+                    <td class="align-middle text-right">${{item.product.price}}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="4" class="text-right">運費</td>
+                    <td class="text-right">
+                      <strong>${{shippingFee}}</strong>
+                    </td>
+                  </tr>
+                <tfoot>
+                  <tr>
+                    <td colspan="4" class="text-right">合計</td>
+                    <td class="text-right">
+                      <strong>${{cartTotal + shippingFee}}</strong>
+                    </td>
+                  </tr>
+                </tfoot>
+                </tbody>
+              </table>
+            </div>
+    
+          </div>
+    
+          <h5 class="bg-light py-3 text-center mt-5">訂購人資訊</h5>
+    
+          <!-- 訂購資訊 -->
+        <!-- 訂單頁面 start -->
+          <validation-observer v-slot="{ invalid }" class="col-md-6">
+            <form @submit.prevent="createOrder">
+              <div class="form-row">
+                <div class="form-group col">
+                  <validation-provider v-slot="{ errors, classes }" rules="required">
+                    <label for="username">收件人姓名</label>
+                    <input id="username" v-model="form.name" type="text" class="form-control" :class="classes">
+                    <span v-if="errors[0]" class="text-danger">{{ errors[0] }}</span>
+                  </validation-provider>
+                </div>
+                <div class="form-group col">
+                  <validation-provider v-slot="{ errors, classes }" rules="email|required">
+                    <label for="email">Email</label>
+                    <input id="email" v-model="form.email" type="email" class="form-control" :class="classes">
+                    <span v-if="errors[0]" class="text-danger">{{ errors[0] }}</span>
+                  </validation-provider>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group col">
+                  <validation-provider v-slot="{ errors, classes }" rules="required|min:8">
+                    <label for="tel">電話</label>
+                    <input id="tel" v-model="form.tel" type="tel" class="form-control" :class="classes">
+                    <span v-if="errors[0]" class="text-danger">{{ errors[0] }}</span>
+                  </validation-provider>
+                </div>
+                <div class="form-group col">
+                  <label for="message">購買方式</label>
+                  <select v-model="form.payment" class="form-control" required>
+                    <option value="" disabled>
+                      請選擇付款方式
+                    </option>
+                    <option value="WebATM">
+                      WebATM
+                    </option>
+                    <option value="ATM">
+                      ATM
+                    </option>
+                    <option value="CVS">
+                      CVS
+                    </option>
+                    <option value="Barcode">
+                      Barcode
+                    </option>
+                    <option value="Credit">
+                      Credit
+                    </option>
+                    <option value="ApplePay">
+                      ApplePay
+                    </option>
+                    <option value="GooglePay">
+                      GooglePay
+                    </option>
+                  </select>
+                </div>
+
+              </div>
+              <div class="form-group">
+                <validation-provider v-slot="{ errors, classes }" rules="required">
+                  <label for="address">地址</label>
+                  <input id="address" v-model="form.address" type="text" class="form-control" :class="classes">
+                  <span v-if="errors[0]" class="text-danger">{{ errors[0] }}</span>
+                </validation-provider>
+              </div>
+              <div class="form-group">
+                <label for="message">備註</label>
+                <textarea id="message" v-model="form.message" class="form-control" cols="30" rows="3">
+                </textarea>
+              </div>
+              <div class="text-right">
+                <button type="submit" class="btn btn-primary" :disabled="invalid">
+                  繼續付款
+                </button>
+              </div>
+            </form>
+          </validation-observer>
+        <!-- 訂單頁面 end -->
+    
+        </div>
+    
+      </div>
+    
+    </div>
+
+    <!-- 完成訂單 Modal start -->
+    <div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">完成訂單</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>恭喜你已完成訂單。</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 完成訂單 Modal end -->
+    
+  </div>
+
+
+
+  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+    integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous">
+    </script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
+    </script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous">
+    </script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-loading-overlay@3"></script>
+  <!-- https://cdnjs.com/libraries/vee-validate 注意版本，full 則包含 rules -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vee-validate/3.3.0/vee-validate.full.min.js"></script>
+  <script type="module">
+    import zh from './zh_TW.js';
+
+    // 自定義設定檔案，錯誤的 className
+    VeeValidate.configure({
+      classes: {
+        valid: 'is-valid',
+        invalid: 'is-invalid',
+      },
+    });
+
+    // 載入自訂規則包
+    VeeValidate.localize('tw', zh);
+    // 將 VeeValidate input 驗證工具載入 作為全域註冊
+    Vue.component('ValidationProvider', VeeValidate.ValidationProvider);
+    // 將 VeeValidate 完整表單 驗證工具載入 作為全域註冊
+    Vue.component('ValidationObserver', VeeValidate.ValidationObserver);
+    // 掛載 Vue-Loading 套件
+    Vue.use(VueLoading);
+    // 全域註冊 VueLoading 並標籤設定為 loading
+    Vue.component('loading', VueLoading);
+
+
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          products: [],
+          cart:{},
+          cartTotal: 0,
+          shippingFee: 0,
+          isLoading: false,
+          form: {
+            name: '',
+            email: '',
+            tel: '',
+            address: '',
+            payment: '',
+            message: '',
+          },
+          uuid: 'b2a0a13b-3f39-4e27-abe0-72d7b7e3eda8',
+          apiPath: 'https://course-ec-api.hexschool.io',
+        }
+      },
+      methods: {
+        getProducts() {
+          const vm = this;
+          const api = `${vm.apiPath}/api/${vm.uuid}/ec/products`;
+          vm.isLoading = true;
+          axios.get(api)
+            .then((res) => {
+              console.log(res)
+              vm.products = res.data.data;
+              vm.isLoading = false;
+            })
+            .catch((err) => {
+              console.log(err)
+            })
+        },
+        getCart(){
+          const vm = this;
+          const api = `${vm.apiPath}/api/${vm.uuid}/ec/shopping`;
+          vm.isLoading = true;
+          axios.get(api)
+            .then((res) => {
+              console.log(res)
+              vm.cart = res.data.data
+              // 累加總金額
+              vm.cart.forEach((item) => {
+                vm.cartTotal += item.product.price;
+              });
+              // 運費計算
+              if(vm.cart.length){
+                if (vm.cartTotal <= 1000) {
+                  vm.shippingFee = 60
+                }
+              }else{
+                vm.shippingFee = 0
+              }
+              
+              vm.isLoading = false;
+            })
+
+        },
+        removeCartItem(id){
+          const vm = this;
+          const api = `${vm.apiPath}/api/${vm.uuid}/ec/shopping/${id}`;
+          vm.isLoading = true;
+          axios.delete(api)
+            .then((res) => {
+              // console.log(res)
+              vm.getCart();
+              vm.isLoading = false;
+            })
+        },
+        createOrder(){
+          const vm = this;
+          const url = `${vm.apiPath}/api/${vm.uuid}/ec/orders`;
+          vm.isLoading = true;
+          
+          axios.post(url, this.form).then((response) => {
+            if (response.data.data.id) {
+              vm.isLoading = false;
+              // 跳出提示訊息
+              $('#orderModal').modal('show');
+
+              // 重新渲染購物車
+              vm.getCart();
+            }
+          }).catch((error) => {
+            vm.isLoading = false;
+            console.log(error.response.data.errors);
+          });
+        }
+
+      },
+      created() {
+        this.getProducts();
+        this.getCart();
+      },
+    })
+
+  </script>
+</body>
+
+</html>

@@ -243,7 +243,7 @@
           });
         }else{ //新增
           // unix stamp 作為 ＩＤ使用
-          const id = newDate().getTime();
+          const id = new Date().getTime();
           this.tempProduct.id = id;
           // 加入products中
           this.products.push(this.tempProduct);
